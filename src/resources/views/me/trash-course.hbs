@@ -1,0 +1,251 @@
+<form class="mt-4" name="container-form" method="POST" action="/courses/select-custom">
+   
+    <h3>Khóa học đã xóa</h3>
+
+    <div class="d-flex justify-content-end">  
+      <a href="/me/store/courses">
+        Khóa học
+        <span class="oi oi-folder"></span>
+      </a>
+    </div> 
+
+    <div class="d-flex my-2 align-items-center">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="" id="checkbox-all">
+        {{!-- for= đặt trùng vs id của input để khi nhấn vào label cũng tác động lên input --}}
+        <label class="form-check-label" for="checkbox-all">
+          Chọn tất cả
+        </label>      
+      </div>
+      
+      {{!-- thêm required (hoặc required="required") để bắt buộc phải chọn trường này --}}
+      <select id="select-value" class="custom-select custom-select-width mx-3 subnav" name="action" required>
+        <option value="">-- Chọn hành động --</option>
+        <option value="detroy">Xóa vĩnh viễn</option>
+        <option value="restore">khôi phục</option>
+      </select>
+      <div>
+        {{!-- thêm attributes disabled (hoặc disabled="disabled") thay cho class="disabled" --}}
+        {{!-- data-toggle= với  data-target= dùng để mở tắt màn hình con (thẻ hỏi xóa)--}}
+        <a role="button" class="btn btn-primary submit-btn disabled" data-toggle="modal" data-target="#custom-select-item">Thực hiện</a>
+      </div>
+      
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr> 
+                <th scope="col">#</th>
+                <th scope="col">STT</th>
+                <th scope="col">Tên khóa học</th>
+                <th scope="col">Trình độ</th>
+                <th scope="col" colspan="2">Thời gian xóa</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each courses}}
+                <tr>
+                    <td>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="courseIds[]" value="{{this._id}}">
+                      </div>
+                    </td>
+                    <th scope="row">{{sum @index 1}}</th>
+                    <td>{{this.name}}</td>
+                    <td>{{this.level}}</td>
+                    <td>{{this.deletedAt}}</td>
+                    <td>
+                        <a href="" class="btn btn-link btn-restore" data-id="{{this._id}}">Khôi phục</a>
+                        <a href="" class="btn btn-link" data-id="{{this._id}}" data-toggle="modal" data-target="#delete-course-item">Xóa vĩnh viễn</a>
+                        {{!-- data-id=this._id thuộc class "data-whatever" mục tiêu là để lấy ra id của khóa học cần xóa 
+                            sau đó sẽ xóa form đó đi. Ko nên đặt form ở đây vì nó đang trong vòng lặp nó sẽ tạo ra n form. 
+                            nên lấy ra Id, khi nào click button này lôi form đó ra xóa thôi--}}
+                    </td>
+                </tr>
+            {{else}}
+                <td colspan="4" class="text-center">
+                  Thùng rác trống.
+                </td>
+            {{/each}}
+        </tbody>
+    </table>
+</form>
+
+{{!-- Bootraps hỏi việc xóa vĩnh viễn khóa học --}}
+<div id="delete-course-item" class="modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Xóa khóa học khỏi thùng rác</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Từ từ cẩn thận, suy nghĩ kĩ!!!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-delete-course" class="btn btn-danger">Xóa bỏ</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{!-- Bootraps của custom select --}}
+<div id="custom-select-item" class="modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Bạn muốn thực hiện tiếp hành động này chứ</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Suy nghĩ lại coi sao</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-custom-select" class="btn btn-danger">Tiếp tục</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{!-- delete hiden form. ko cần định nghĩa action(làm trong script) --}}
+<form name="delete-course-form" method="POST"></form>
+<form name="restore-course-form" method="POST"></form>
+
+
+{{!-- để tránh bị lỗi ở dấu $(đã định nghĩa ở trong jquery) ta thêm vào sự kiện khi nào DOM load xong
+hết tất cả content thì mới chạy script --}}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var CourseId;
+        var deleteForm = document.forms['delete-course-form'];
+        var restoreForm = document.forms['restore-course-form'];
+        var customSelectForm = document.forms['container-form'];
+  
+        var btnDeleteCourse = document.getElementById('btn-delete-course');
+        var btnSelectCustom = document.getElementById('btn-custom-select');
+
+        var restoreBtn = $('.btn-restore') //thư viện jquery tương đương
+                                           //document.querySelectorAll('.btn-restore');
+                             
+        //Lấy ra checkbox "chọn tất cả"
+        var checkboxAll = document.querySelector('#checkbox-all');
+
+        //Lấy ra tất cả các checbox con
+        var checkboxItems = document.querySelectorAll('input[name="courseIds[]"]');
+        // querySelectorAll sẽ đưa ra kiểu NodeList ko phải là JavaScript API (forEach(), map(), reduce(),...)
+        // (trên chorme thực hiện đc nhưng trên IE ko được) do đó cần chuyển nó sang Array bằng cách
+        // Array.prototype.slice.call() hoặc dùng Array.from()
+        var arrayCheckboxItems = Array.prototype.slice.call(checkboxItems);
+
+        // lấy ra custom select
+        var customSelect = document.getElementById('select-value')
+
+        // lấy ra submit button - nút thực hiện
+        var submitBtn = document.querySelector('.submit-btn')
+
+        var isFullCheckedItem; // Kiểm tra tất cả Iterm con đc check
+        var isCheckedItem; // Kiểm tra có Iterm con đc check hay ko
+        var isAllSeleted; // Kiểm tra có click vào ô chọn tất cả hay ko
+
+       /////////////////////////////////////////////////////////////////////////////////////////
+
+        // xem bootrap mục data-whatever để hiểu $('#delete-course-item').on('show.bs.modal', function (event)
+        $('#delete-course-item').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            CourseId = button.data('id'); //data-whatever whatever ở đây là id
+        })
+
+        // Nút nhấn delete
+        btnDeleteCourse.onclick = function () {
+            deleteForm.action = '/courses/' + CourseId + '/force?_method=DELETE'; // đưa Id và phương thức vào form
+            deleteForm.submit();
+        }
+        
+        // Nút nhấn restore
+        restoreBtn.click(function (event) {
+          event.preventDefault(); // bỏ hành vi mặc định ở đây là thẻ a nó có href --> bỏ hành vi của href
+
+          //jquery sẽ trả về một đối tượng $(this) --> element của chính cái nút mà mình click vào
+          var courseId = $(this).data('id');
+         
+          restoreForm.action = '/courses/' + courseId + '/restore?_method=PATCH'; // đưa Id và phương thức vào form
+          restoreForm.submit();
+        
+        })
+        
+        // khu viết thuần JS
+        // Submit form select custom (khôi phục và xóa vĩnh viễn)
+        btnSelectCustom.onclick = function () {
+          customSelectForm.submit();
+        }
+        // khi nhấn checkbox 'chọn tất cả'
+        checkboxAll.onchange = function () {
+          var arrayCheckboxItem;
+          if (checkboxAll.checked) {
+            isAllSeleted = true;
+            isCheckedItem = false;
+            //arrayCheckboxItems.forEach((Item, index) => { // IE ko hỗ trợ arrow function
+            arrayCheckboxItems.forEach(function(Item, index) {
+              arrayCheckboxItem = arrayCheckboxItems[index].checked = true;
+            })
+          }else {
+            isAllSeleted = false;
+            arrayCheckboxItems.forEach(function(Item, index) {
+              arrayCheckboxItem = arrayCheckboxItems[index].checked = false;
+            })
+          }
+          renderisCheckedItem();
+        }
+        
+        // Khi các checkbox item được nhấn
+        for (var i = 0; i < arrayCheckboxItems.length; i++) {
+          arrayCheckboxItems[i].onchange = function () {
+            //isFullCheckedItem = arrayCheckboxItems.every((curr, index) => {return curr.checked == true;})
+            isFullCheckedItem = arrayCheckboxItems.every(function (curr, index) { // tất cả đc checked?
+              return curr.checked == true;
+            })
+            
+            isCheckedItem = arrayCheckboxItems.some(function (curr, index) { // có thằng nào checked hay ko?
+              return curr.checked == true;
+            })
+
+            if (isFullCheckedItem) { //nếu tất cả được checked thì điền luôn cho thằng sellect all
+              checkboxAll.checked = true;
+            }else {
+              checkboxAll.checked = false;
+            }
+            renderisCheckedItem();
+          }
+        }
+
+        // cập nhật lại nút "thực hiện" mỗi khi select value thay đổi
+        customSelect.onchange = function () {
+          renderisCheckedItem();
+        };
+        
+        // Xử lí nút "thực hiện" và thanh custom select
+        function renderisCheckedItem() {
+          var isCustomSelect = customSelect.value !== '';
+          
+          if (isCustomSelect && (isCheckedItem || isAllSeleted)) { // nút "thực hiện"
+            submitBtn.classList.remove('disabled');
+          }else {
+            submitBtn.classList.add('disabled');
+          }
+          
+          if (!isCustomSelect && (isCheckedItem || isAllSeleted)) { // thanh custom select
+            customSelect.classList.add('select-value-invalid');
+          }else {
+            customSelect.classList.remove('select-value-invalid');
+          }
+        }
+        
+    })
+    
+</script>

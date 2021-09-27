@@ -1,0 +1,279 @@
+{{!-- https://handlebarsjs.com/guide/ truy cập vào để hiểu hơn về handlebars --}}
+{{!-- cái form này chưa biết được hành vi chính xác (có thể là thêm, xóa, ...) thì sẽ để phương thức POST --}}
+{{!-- trong 1 form chỉ có 1 button submit thôi (những cái khác dùng thẻ a) --}}
+<form id="sum-form" class="mt-4" name="container-form" method="POST" action="/courses/handle-form-action">
+    {{!-- thử biến locals --}}
+    {{!-- {{_sort.type}} --}}
+
+    <h3>Khóa học của tôi</h3>
+    <div class="d-flex justify-content-end">
+      {{!-- {{#if deleteCount}} --}}
+      <a href="/me/trash/courses">
+        <span class="oi oi-trash"></span>
+        Thùng rác ({{deleteCount}})
+        {{!-- {{deleteCount}} nằm ở hàm storeCourse(req, res, next) của MeController.js --}}
+      </a>
+      {{!-- {{/if}} --}}
+    </div>
+
+    <div class="d-flex my-2 align-items-center">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="" id="checkbox-all">
+        {{!-- for= đặt trùng vs id của input để khi nhấn vào label cũng tác động lên input --}}
+        <label class="form-check-label" for="checkbox-all">
+          Chọn tất cả
+        </label>      
+      </div>
+      
+      {{!-- thêm required (hoặc required="required") để bắt buộc phải chọn trường này --}}
+      <select id="select-value" class="custom-select custom-select-width mx-3" name="action" required>
+        <option value="">-- Chọn hành động --</option>
+        <option value="delete">Xóa</option>
+      </select>
+      <div>
+        {{!-- thêm attributes disabled (hoặc disabled="disabled") thay cho class="disabled" --}}
+        {{!-- data-toggle= với  data-target= dùng để mở tắt màn hình con (thẻ hỏi xóa)--}}
+        <a role="button" class="btn btn-primary submit-btn disabled" data-toggle="modal" data-target="#delete-all-course">Thực hiện</a>
+      </div>
+      
+    </div>
+      
+     
+
+    <table class="table">
+        <thead>
+            <tr> 
+                <th scope="col">#</th>
+                <th scope="col">
+                  ID
+                   {{{sortable '_id' _sort}}}
+                </th>
+                <th scope="col">
+                  Tên khóa học
+                  {{!-- 'name' lấy trong CSDL --}}
+                  {{!-- ví dụ ở đây lấy 2 tham số. 1 là 'name' lấy từ CSDL, 2 là _sort
+                  do _sort là biến locals nên nó có thể đọc được trong đây
+                  xem https://expressjs.com/en/4x/api.html#res.locals để hiểu hơn.
+                   Giải thuật của thằng này được thực hiện qua helper--}}
+                  {{{sortable 'name' _sort}}}
+
+                  {{!-- sắp xếp khóa học dùng query parameter (? với &) ko / vì query ngay tại trang này
+                   --}}
+                   {{!-- "?_sort&column=name&type=desc" các tên đều là tự đặt còn key thì lấy
+                    _sort: sắp xếp, column: cột sắp xếp ở đây lấy cột name(lấy trong CSDL), 
+                    type: desc từ lớn đến nhỏ và asc ngược lại --}}
+                  {{!-- <a href="?_sort&column=name&type=desc"><span class="oi oi-elevator"></span></a> --}}
+                </th>
+                <th scope="col">
+                  Trình độ
+                  {{{sortable 'level' _sort}}}
+                </th>
+                <th scope="col" colspan="2">
+                  Thời gian tạo
+                  {{{sortable 'createdAt' _sort}}}
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each courses}}
+                {{!--  --}}
+                <tr>
+                    <td>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="courseIds[]" value="{{this._id}}">
+                      </div>
+                    </td>
+                    <th scope="row">{{this._id}}</th>
+                    <td>{{this.name}}</td>
+                    <td>{{this.level}}</td>
+                    <td>{{this.createdAt}}</td>
+                    <td>
+                        <a href="/courses/{{this._id}}/edit" class="btn btn-link">
+                          Sửa
+                        </a>
+                        <a href="" class="btn btn-link" data-id="{{this._id}}" data-toggle="modal" data-target="#delete-course-item">Xóa</a>
+                        {{!-- data-id=this._id thuộc class "data-whatever" mục tiêu là để lấy ra id của khóa học cần xóa 
+                            sau đó sẽ xóa form đó đi. Ko nên đặt form ở đây vì nó đang trong vòng lặp nó sẽ tạo ra n form. 
+                            nên lấy ra Id, khi nào click button này lôi form đó ra xóa thôi
+                            <form name="delete-course-form" method="POST"></form> viết form phía dưới--}}
+                    </td>
+                </tr>
+            {{else}}
+                <td colspan="4" class="text-center">
+                  Bạn chưa đăng khóa học nào.
+                  <a href="/courses/create">Đăng khóa học</a>
+                </td>
+            {{/each}}
+        </tbody>
+    </table>
+</form>
+
+{{!-- bootraps form hỏi việc xóa khóa học --}}
+<div id="delete-course-item" class="modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Xóa khóa học</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Cứ mạnh dạng xóa đi em êi!!!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-delete-course" class="btn btn-danger">Xóa bỏ</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{!-- bootraps form hỏi việc xóa toàn bộ khóa học --}}
+<div id="delete-all-course" class="modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Bạn muốn thực hiện hành động này chứ</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Suy nghĩ chắc chưa?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-delete-all-course" class="btn btn-danger">Xóa bỏ</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{!-- delete hiden form. ko cần định nghĩa action(làm trong script). Và vì phương thức submit() phải theo form
+nên phải tạo ra một form (https://www.npmjs.com/package/mongoose-delete). Do vậy tao ra 1 form đơn giản
+để nó có thể chứa id (thư viện mongoose-delete xóa theo id) và để thay đổi method của nó. Form này được gọi
+là form ẩn --}}
+<form name="delete-course-form" method="POST"></form>
+
+
+{{!-- để tránh bị lỗi ở dấu $(đã định nghĩa ở trong jquery) ta thêm vào sự kiện khi nào DOM load xong
+hết tất cả content thì mới chạy script --}}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // chú ý là những biến đc khái báo bằng jquery ($) thì mới sử dụng đc phương thức theo jqurey
+        var CourseId;
+        var deleteForm = document.forms['delete-course-form']; // nhớ câu lệnh này (nó dùng để lấy form ra theo name)
+        //var deleteAllForm = document.forms['delete-all-course-form']
+        var containerForm = $('form[name="container-form"]');
+        //định nghĩa bình thường
+        //var containerForm = document.forms['container-form'];
+        // hoặc có thể lấy theo class, id, ... như ví dụ dưới đây
+        //var containerFormId = document.getElementById('sum-form')
+
+        // kiểm tra đã chọn select chưa
+        var selectValue = document.getElementById('select-value');
+
+        var btnDeleteCourse = document.getElementById('btn-delete-course');
+        var btnDeleteAllCourse = document.getElementById('btn-delete-all-course');
+        var checkboxAll = $('#checkbox-all'); //thư viện jquery tương đương
+                                           //document.querySelectorAll('.checkbox-all');
+
+        var courseItemCheckbox = $('input[name="courseIds[]"]'); //thư viện jquery tương đương
+                                           //document.querySelectorAll('input[name="courseIds[]"]');
+      
+        var checkSubmitBtn = $('.submit-btn');
+
+        // xem bootrap mục data-whatever để hiểu $('#delete-course-item').on('show.bs.modal', function (event)
+        $('#delete-course-item').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            CourseId = button.data('id');
+        });
+        // khi nút xóa được click
+        btnDeleteCourse.onclick = function () {
+            deleteForm.action = '/courses/' + CourseId + '?_method=DELETE'; // đưa Id và phương thức vào form
+            deleteForm.submit();
+        }
+
+        // khi nút xóa được click
+        btnDeleteAllCourse.onclick = function () {
+            //deleteForm.action = '/courses/' + CourseId + '?_method=DELETE'; // đưa Id và phương thức vào form
+            containerForm.submit();
+        }
+
+        // khi checkbox All được click
+        checkboxAll.change(function () { // jquery change tương đương onchange bên JS thuần
+            //jquery sẽ trả về một đối tượng $(this) --> element của chính cái nút mà mình click vào
+            var isCheckedAll = $(this).prop('checked') // prop --> property
+                                                       // isCheckedAll sẽ trả về true/false
+            courseItemCheckbox.prop('checked', isCheckedAll);
+            // tương đương đoạn if bên dưới. do isCheckedAll là boolean nên có thể làm ngắn gọn như trên
+            //if(isCheckedAll) {
+            //  courseItemCheckbox.prop('checked', true);
+            //}else {
+            //  courseItemCheckbox.prop('checked', false);
+            //}
+            renderisCheckedItem();
+        });
+
+        // khi checkbox item được click
+        courseItemCheckbox.change(function () { // jquery change tương đương onchange bên JS thuần
+            var isCheckedAll = courseItemCheckbox.length === $('input[name="courseIds[]"]:checked').length
+            checkboxAll.prop('checked', isCheckedAll) 
+            // Nếu độ dài của $('input[name="courseIds[]"]:checked').length bằng với courseItemCheckbox.length
+            // có nghĩa là tất cả các item con đã được checked thì thằng checkboxAll sẽ đc set true
+            // isCheckedAll với thằng isCheckedAll ở function trên là hoàn toàn khác nhau --> wakaru?
+            renderisCheckedItem();
+        });
+
+        // cập nhật lại nút "thực hiện" mỗi khi select value thay đổi
+        selectValue.onchange = function () {
+          renderisCheckedItem();
+        };
+
+        // kiểm tra xem có chọn select khi nhấn mấy nút checked hay chưa
+        // kiểm tra xem có checked thằng nào ko để hiện thị nút "Thực hiện"
+        function renderisCheckedItem() {
+            var isChecked = $('input[name="courseIds[]"]:checked').length
+            var isSelected = selectValue.value !== ''
+            if (isChecked > 0 && isSelected) { // có thể if (isChecked) cũng đc --> Truthy
+              checkSubmitBtn.removeClass('disabled'); // trường hợp disabled là class viết thêm đoạn code phía dưới
+              //checkSubmitBtn.attr('disabled', false); // trường hợp disabled là attributes
+            }else {
+              checkSubmitBtn.addClass('disabled');
+              //checkSubmitBtn.attr('disabled', true);
+            }
+
+            if (isChecked && !isSelected) {
+              selectValue.classList.add('select-value-invalid');
+            } else {
+              selectValue.classList.remove('select-value-invalid');
+            }
+        }
+
+         // Submit nút "thực hiện"
+       // đây là 1 ý tưởng cho việc thực hiện button - select tuy nhiên ở đây có 1 điểm là button mặc dù
+       // đã disabled nhưng vẫn nhấn đc --> Sai (chưa tối ưu)
+       // containerForm.on('submit', function () { //lắng nghe sự kiện onsubmit form
+       //     var isSubmitable = !checkSubmitBtn.hasClass('disabled') //jquery hasClass : kiểm tra có tồn tại class ko
+       //                                                      // giống classLít.contains
+       //     if (!isSubmitable) {
+       //       e.preventDefault();
+       //     }
+       // })
+
+       // trường hợp disabled là class. cách chuẩn dùng phương thức click
+       //   checkSubmitBtn.click('submit', function (e) {
+       //       var isSubmitted = $(this).hasClass('disabled');
+       //       if (isSubmitted) {
+       //         e.preventDefault();
+       //       }
+       //   })
+
+      // console.log(deleteAllForm)
+      
+      
+       
+    });
+    
+</script>

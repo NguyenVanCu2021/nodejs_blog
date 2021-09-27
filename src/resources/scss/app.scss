@@ -1,0 +1,23 @@
+@import 'variable'; // chỉ cần đặt 'variable' nó sẽ tự thêm dấu _ và .scss đằng sau
+
+.card-course-item {
+    margin-top: 16px
+}
+
+.custom-select-width {
+    width: 40%;
+}
+
+.select-value-invalid {
+    border-color: #ef0b62;
+    color: #ef0b62;
+}
+
+.subnav {
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+.user-avatar {
+    border-radius: 50%;
+    width: 24px;
+}
